@@ -1,6 +1,7 @@
-# todo : handle application potential bugs on inputs
+# todo : add more options on select query
 
 import sqlite3
+import re
 
 
 class ExpenseManager:
@@ -28,14 +29,23 @@ class ExpenseManager:
             INSERT INTO Expenses(Expense_Amount, Expense_Category, Expense_Date , Expense_Detail)
             values (?,?,?,?)
         """
-        amount = float(input("Enter amount : "))
-        category = input("Enter expense category : ")
-        date = input("Enter expense date (YYYY-MM-DD): ")
-        detail = input("Enter expense detail : ")
+        while True:
+            try:
+                amount = float(input("Enter amount : "))
+                category = input("Enter expense category : ")
+                date = input("Enter expense date (YYYY-MM-DD): ")
+                result = re.search(r"^\d{4}\-\d{2}\-\d{2}$", date)
+                if not result:
+                    raise ValueError("Invalid date format")
+                detail = input("Enter expense detail : ")
+                self.cursor.execute(sql, (amount, category, date, detail))
+                self.conn.commit()
+            except Exception as error:
+                print(error)
+            else:
+                print("Expense added successfully")
+                break
 
-        self.cursor.execute(sql, (amount, category, date, detail))
-        self.conn.commit()
-        print("Expense added successfully")
 
     def delete_expense(self):
         sql = """
@@ -59,14 +69,25 @@ class ExpenseManager:
         UPDATE Expenses SET Expense_Amount = ?, Expense_Category = ?, Expense_Date = ?, Expense_Detail = ?
         WHERE Expense_Id = ?
         """
-        e_id = int(input("Enter Expense_Id you want to update : "))
-        amount = float(input("Enter new amount : "))
-        category = input("Enter expense category : ")
-        date = input("Enter expense date : ")
-        detail = input("Enter expense detail : ")
-        self.cursor.execute(sql, (amount, category, date, detail, e_id))
-        self.conn.commit()
-        print("Expense updated successfully")
+        while True:
+            try:
+                e_id = int(input("Enter Expense_Id you want to update : "))
+                amount = float(input("Enter amount : "))
+                category = input("Enter expense category : ")
+                date = input("Enter expense date (YYYY-MM-DD): ")
+                result = re.search(r"^\d{4}\-\d{2}\-\d{2}$", date)
+                if not result:
+                    raise ValueError("Invalid date format")
+                detail = input("Enter expense detail : ")
+                self.cursor.execute(sql, (amount, category, date, detail, e_id))
+                self.conn.commit()
+
+            except Exception as error:
+                print(error)
+
+            else:
+                print("Expense updated successfully")
+                break
 
 
 if __name__ == '__main__':
@@ -93,9 +114,12 @@ if __name__ == '__main__':
                 manager.insert_expense()
 
             elif command == 2:
-                table = manager.select_expense()
-                for i in table:
-                    print(i)
+                rows = manager.select_expense()
+                if rows is not None:
+                    for row in rows:
+                        print(row)
+                else:
+                    print("No expense available")
 
             elif command == 3:
                 manager.delete_expense()
